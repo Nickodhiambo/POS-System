@@ -1,0 +1,240 @@
+{% extends "posApp/base.html" %} {% block pageContent %}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
+    <div class="mdc-card py-2">
+        <div class="d-flex justify-content-center align-items-center">
+            <h6 class="card-title mb-0">Salesforce Point of Sale</h6>
+        </div>
+        
+    </div>
+</div>
+<div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
+    <div class="mdc-card">
+        <form action="" id="pos-form">
+            <fieldset>
+                <legend>Add Products</legend>
+                <div class="row align-items-end">
+                    <div class="col-lg-5 col-md-5 col-sm-12">
+                        <div class="form-group mb-3">
+                            <label for="product-id">Search Product</label>
+                            <select id="product-id" class="form-select form-select-sm">
+                                <option value="" disable selected></option>
+                                {% for product in products %}
+                                    <option value="{{ product.pk }}">{{ product }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-5 col-md-12">
+                        <div class="form-group mb-3">
+                            <label for="product-qty">Qty</label>
+                            <input type="number" class="form-control form-control-sm text-center" step="any" id="product-qty" value="1">
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-2 col-md-12">
+                        <div class="form-group mb-3">
+                            <button class="btn btn-light btn-sm bg-gradient border rounded-0 text-start" type="button" id="add_item"><i class="mdi mdi-plus"></i> Add Item</button>
+                        </div>
+                    </div>
+
+                </div>
+            </fieldset>
+            <fieldset>
+                <div class="d-flex w-100" id="POS-field">
+                    <div class="col-8 bg-black bg-light border h-100">
+                        <table class="table table-bordered">
+                    
+                            <colgroup>
+                                <col width="2%">
+                                <col width="10%">
+                                <col width="15%">
+                                <col width="10%">
+                                <col width="10%">
+                                
+                            </colgroup>
+                            <thead>
+                                <tr class="bg-black bg-gradient bg-opacity-50 text-light">
+                                    <th class="py-1 px-2 text-center  text-light">RMV</th>
+                                    <th class="py-1 px-2 text-center  text-light">QTY</th>
+                                    <th class="py-1 px-2 text-center  text-light">Product</th>
+                                    <th class="py-1 px-2 text-center  text-light">Price</th>
+                                    <th class="py-1 px-2 text-center  text-light">Total</th>
+                                </tr>
+                            </thead>
+                        
+                            <tbody>
+                            </tbody>
+  
+
+                        
+                        </table>
+        
+                    </div>
+
+                    <div class="col-4   bg -gradient bg-blue bg-opacity-50 bg-border h-100">
+                        <div class="col-12 py-12 px-2">
+                            <dl>
+                                <dt class="h6 fw-bold text-light">Sub Total</dt>
+                                <dd class="text-end py-1 px-2 rounded-0 bg-light">
+                                    <input type="hidden" name="sub_total" value="0">
+                                    <span class="h3 fw-bold" id="sub_total">0.00</span>
+                                </dd>
+                                <dt class="h6 fw-bold text-light">Tax (Inclusive) (%)</dt>
+                                <dd>
+                                    <input type="number" class="form-control form-control-lg rounded-0 text-end" step="any" min="0" max="100" name="tax" value="16">
+                                </dd>
+                                <dt class="h6 fw-bold text-light">Tax Amount(inclusive)</dt>
+                                <dd class="text-end py-1 px-2 rounded-0 bg-light">
+                                    <input type="hidden" name="tax_amount" value="0">
+                                    <span class="h3 fw-bold" id="tax_amount">0.00</span>
+                                </dd>
+                                <dt class="h5 fw-bold text-light">Grand Total</dt>
+                                <dd class="text-end py-1 px-2 rounded-0 bg-light">
+                                    <input type="hidden" name="grand_total" value="0">
+                                    <input type="hidden" name="tendered_amount" value="0">
+                                    <input type="hidden" name="amount_change" value="0">
+                                    <input type="hidden" name="grand_total" value="0">
+                                    <input type="hidden" name="grand_total" value="0">
+                                    <span class="h3 fw-bold" id="grand_total">0.00</span>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+           <div class="row">
+                <div class="col-md-12 text-end">
+                    <button class="btn btn-primary btn-sm rounded-0" type="button" id="check_out"><i class="mdi mdi-save"></i> Checkout</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<noscript id="item-clone">
+    <tr>
+        <td class="px-2 py-1 text-center">
+            <button class="btn btn-sm btn-outline-danger rounded-0 rem-item" type="button"><i class="mdi mdi-close"></i></button>
+        </td>
+        <td class="px-2 py-1">
+            <input type="hidden" name="product_id[]">
+            <input type="hidden" name="price[]">
+            <input type="number" name="qty[]" min="0" class="form-control form-control-sm rounded-0 text-center">
+        </td>
+        <td class="px-2 py-1 product_name text-start"></td>
+        <td class="px-2 py-1 product_price text-end"></td>
+        <td class="px-2 py-1 product_total text-end"></td>
+    </tr>
+</noscript> {% endblock pageContent %} {% block ScriptBlock %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+    var product_json = '{{ product_json }}'
+    if (product_json == "" || product_json == "{}") {
+        product_json = {}
+    } else {
+        product_json = product_json.replaceAll('&quot;', '"')
+        product_json = $.parseJSON(product_json)
+    }
+    var prod_arr = {}
+    if (Object.keys(product_json).length > 0) {
+        Object.keys(product_json).map(k => {
+            prod_arr[product_json[k].id] = product_json[k]
+        })
+    }
+
+    function calc() {
+        var sub_total = 0;
+        var grand_total = 0;
+        $('#POS-field table tbody tr').each(function() {
+            price = $(this).find('[name="price[]"]').val()
+            qty = $(this).find('[name="qty[]"]').val()
+            qty = qty > 0 ? qty : 0
+            total = parseFloat(price) * parseFloat(qty)
+            $(this).find('.product_total').text(parseFloat(total).toLocaleString('en-US'))
+            sub_total += parseFloat(total)
+        })
+        tax = $('[name="tax"]').val()
+        tax = tax / 100;
+        var tax_amount = parseFloat(sub_total) * parseFloat(tax);
+        $('#tax_amount').text(parseFloat(tax_amount).toLocaleString('en-US'))
+        $('[name="tax_amount"]').val(parseFloat(tax_amount))
+        $('#grand_total').text(parseFloat(sub_total).toLocaleString('en-US'))
+        $('[name="grand_total"]').val(parseFloat(sub_total))
+        $('#sub_total').text(parseFloat(sub_total).toLocaleString('en-US'))
+        $('[name="sub_total"]').val(parseFloat(sub_total))
+        
+    }
+    
+    
+    $(function() {
+        // Event handler for the product selection field (when a product is selected)
+        $('#product-id').change(function() {
+            var id = $(this).val();
+            var qty = $('#product-qty').val();
+    
+            if (id == '' || qty == '' || id == null || qty == null) {
+                alert("Product and Quantity Field is required!");
+                return false;
+            }
+    
+            if (!!prod_arr[id]) {
+                var existingRow = $('#POS-field table tbody input[name="product_id[]"][value="' + id + '"]').closest('tr');
+    
+                if (existingRow.length > 0) {
+                    // If the product already exists in the list, increment its quantity
+                    var currentQty = parseInt(existingRow.find('[name="qty[]"]').val(), 10);
+                    var newQty = currentQty + parseInt(qty, 10);
+                    existingRow.find('[name="qty[]"]').val(newQty);
+                    existingRow.find('.product_total').text(parseFloat(data.price * newQty).toLocaleString('en-US'));
+                } else {
+                    // If the product is not in the list, add a new row
+                    data = prod_arr[id];
+                    var tr = $($('noscript#item-clone').html()).clone();
+                    tr.find('[name="qty[]"]').val(qty);
+                    tr.find('[name="product_id[]"]').val(id);
+                    tr.find('[name="price[]"]').val(data.price);
+                    tr.find('.product_name').text(data.name);
+                    tr.find('.product_price').text(parseFloat(data.price).toLocaleString('en-US'));
+                    tr.find('.product_total').text(parseFloat(data.price * qty).toLocaleString('en-US'));
+                    $('#POS-field table tbody').append(tr);
+                }
+    
+                $('#product-id').val('').trigger('change');
+                $('#product-qty').val(1);
+                calc();
+                tr.find('[name="qty[]"]').on('input keypress keyup keydown', function() {
+                    calc();
+                });
+                tr.find('.rem-item').click(function() {
+                    if (confirm("Are you sure to remove " + data.name + " product from the list?")) {
+                        tr.remove();
+                        calc();
+                    }
+                });
+            } else {
+                alert("Undefined Product");
+            }
+        });
+        $('[name="tax"]').on('input keypress keydown keyup', function() {
+            calc()
+        })
+        $('#check_out').click(function() {
+            if ($('#POS-field table tbody tr').length <= 0) {
+                alert("Add atleast 1 product first!")
+                return false;
+            }
+            uni_modal("Checkout", "{% url 'checkout-modal' %}?grand_total=" + $('[name="grand_total"]').val())
+        })
+        
+//serch function
+    $(document).ready(function() {
+        $('#product-id').select2({
+            placeholder: "Please Select Product here",
+            width: '100%'
+        });
+    });
+});
+    });
+
+</script>
+{% endblock ScriptBlock %}
+
